@@ -28,7 +28,7 @@ app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/product", productRoutes);
 
 //rest api
-app.get("/", (req, res) =>
+app.get("/test", (req, res) =>
   res.send(
     `<h1>Site is Working. click <a href=${process.env.BASE_URL}>here</a> to visit frontend.</h1>`
   )
