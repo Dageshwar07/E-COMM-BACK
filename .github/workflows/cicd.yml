@@ -31,29 +31,17 @@ jobs:
 
       - name: Push Docker Image to Docker Hub
         run: docker push dageshwar07/node-app:latest  # Push Docker image
-  
-<<<<<<< HEAD
+
  deploy:
-  needs: build
-  runs-on: self-hosted 
-  steps:
-    - name: Pull image from Docker Hub
+   needs: build
+   runs-on: self-hosted 
+   steps:
+     - name: Pull image from Docker Hub
       run: docker pull dageshwar07/node-app:latest 
 
-    - name: Delete old container
-      run: docker rm -f my-node-app || true 
+     - name: Delete old container
+       run: docker rm -f my-node-app || true 
 
-    - name: Run Docker Container
-      run: docker run -d -p 4000:4000 --name my-node-app dageshwar07/node-app:latest 
-=======
-  deploy:
-    needs: build
-    runs-on: self-hosted 
-    steps:
-      - name: Pull image from docker hub
-        run: docker pull dageshwar07/node-app:latest 
-      - name: Delete old container
-        run: docker rm -f my-node-app 
-      - name: Run Docker Container
-        run: docker run -d -p 4000:4000 --name my-node-app 
->>>>>>> de8c36b22e2219f39925af7c1b6ae96954198728
+     - name: Run Docker Container
+       run: docker run -d -p 4000:4000 --name my-node-app dageshwar07/node-app:latest 
+
