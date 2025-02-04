@@ -28,7 +28,6 @@ jobs:
 
       - name: Build Docker Image
         run: docker build -t dageshwar07/node-app:latest .  # Build Docker image
-        working-directory: ./backend  # Adjust this if your Dockerfile is inside a subdirectory
 
       - name: Push Docker Image to Docker Hub
         run: docker push dageshwar07/node-app:latest  # Push Docker image
