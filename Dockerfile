@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 4000
 
 # Start the application in development mode
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "server"]
