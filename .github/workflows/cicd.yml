@@ -21,30 +21,16 @@ jobs:
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: SSH & Deploy Docker Container
-        env:
-          DEV_MODE: ${{ secrets.DEV_MODE }}
-          PORT: ${{ secrets.PORT }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          MONGO_URL: ${{ secrets.MONGO_URL }}
-          BRAINTREE_PUBLIC_KEY: ${{ secrets.BRAINTREE_PUBLIC_KEY }}
-          BRAINTREE_PRIVATE_KEY: ${{ secrets.BRAINTREE_PRIVATE_KEY }}
-          BRAINTREE_MERCHANT_ID: ${{ secrets.BRAINTREE_MERCHANT_ID }}
-          BASE_URL: ${{ secrets.BASE_URL }}
         run: |
           echo "🚀 Starting SSH deployment..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} /bin/bash <<EOF
-            set -e
 
-            echo "✅ Removing old container..."
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash -s <<'ENDSSH'
             docker rm -f e-comm-back || true
-
-            echo "📦 Pulling latest Docker image..."
             docker pull dageshwar07/e-comm-back:v2
 
-            echo "🚀 Running Docker container..."
-            docker run -d --name e-comm-back -p ${PORT}:${PORT} \
-              -e NODE_ENV=${DEV_MODE} \
-              -e PORT=${PORT} \
+            docker run -d --name e-comm-back -p 4000:4000 \
+              -e NODE_ENV=production \
+              -e PORT=4000 \
               -e JWT_SECRET="${JWT_SECRET}" \
               -e MONGO_URL="${MONGO_URL}" \
               -e BRAINTREE_PUBLIC_KEY="${BRAINTREE_PUBLIC_KEY}" \
@@ -53,5 +39,12 @@ jobs:
               -e BASE_URL="${BASE_URL}" \
               dageshwar07/e-comm-back:v2
 
-            echo "✅ Deployment finished."
-            EOF
+            echo "✅ Deployment finished!"
+          ENDSSH
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          MONGO_URL: ${{ secrets.MONGO_URL }}
+          BRAINTREE_PUBLIC_KEY: ${{ secrets.BRAINTREE_PUBLIC_KEY }}
+          BRAINTREE_PRIVATE_KEY: ${{ secrets.BRAINTREE_PRIVATE_KEY }}
+          BRAINTREE_MERCHANT_ID: ${{ secrets.BRAINTREE_MERCHANT_ID }}
+          BASE_URL: ${{ secrets.BASE_URL }}
