@@ -1,0 +1,43 @@
+name: Deploy e-comm-back to EC2
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH Access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: SSH & Deploy Docker Container
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+
+            docker rm -f e-comm-back || true
+
+            docker pull dageshwar07/e-comm-back:latest
+
+            docker run -d \
+              --name e-comm-back \
+              -p 4000:4000 \
+              -e NODE_ENV="${{ secrets.NODE_ENV }}" \
+              -e PORT="${{ secrets.PORT }}" \
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              -e MONGO_URL="${{ secrets.MONGO_URL }}" \
+              -e BRAINTREE_PUBLIC_KEY="${{ secrets.BRAINTREE_PUBLIC_KEY }}" \
+              -e BRAINTREE_PRIVATE_KEY="${{ secrets.BRAINTREE_PRIVATE_KEY }}" \
+              -e BRAINTREE_MERCHANT_ID="${{ secrets.BRAINTREE_MERCHANT_ID }}" \
+              -e BASE_URL="${{ secrets.BASE_URL }}" \
+              dageshwar07/e-comm-back:latest
+
+          EOF
