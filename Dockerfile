@@ -7,8 +7,6 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Copy .env file (for environment variables)
-COPY .env .env
 # Install dependencies
 RUN npm install
 
@@ -22,4 +20,4 @@ COPY . .
 EXPOSE 4000
 
 # Start the app with PM2
-CMD ["pm2-runtime", "start", "server.js"]
+CMD ["pm2-runtime", "server.js"]
