@@ -34,30 +34,39 @@ jobs:
           MONGO_URL: ${{ secrets.MONGO_URL }}
 
       - name: SSH & Deploy Docker Container
+        env:
+          DEV_MODE: ${{ secrets.DEV_MODE }}
+          PORT: ${{ secrets.PORT }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          MONGO_URL: ${{ secrets.MONGO_URL }}
+          BRAINTREE_PUBLIC_KEY: ${{ secrets.BRAINTREE_PUBLIC_KEY }}
+          BRAINTREE_PRIVATE_KEY: ${{ secrets.BRAINTREE_PRIVATE_KEY }}
+          BRAINTREE_MERCHANT_ID: ${{ secrets.BRAINTREE_MERCHANT_ID }}
+          BASE_URL: ${{ secrets.BASE_URL }}
         run: |
-            echo "🚀 Starting SSH deployment..."
-            ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << "EOF"
+          echo "🚀 Starting SSH deployment..."
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
 
-              set -e
+          set -e
 
-              echo "✅ Removing old container..."
-              docker rm -f e-comm-back || true
+          echo "✅ Removing old container..."
+          docker rm -f e-comm-back || true
 
-              echo "📦 Pulling latest Docker image..."
-              docker pull dageshwar07/e-comm-back:v2
+          echo "📦 Pulling latest Docker image..."
+          docker pull dageshwar07/e-comm-back:v2
 
-              echo "🚀 Running Docker container..."
-              docker run -d --name e-comm-back -p 4000:4000 \
-                -e NODE_ENV=production \
-                -e PORT=4000 \
-                -e JWT_SECRET=dageshwardasmanikpuri9669712991 \
-                -e MONGO_URL="mongodb+srv://Dageshwar07:Dagesh0712@cluster1.o9ihroc.mongodb.net/ecommerce?retryWrites=true&w=majority" \
-                -e BRAINTREE_PUBLIC_KEY=4y2kdfq2mdqn3f7v \
-                -e BRAINTREE_PRIVATE_KEY=6d3e25dfcda2b75459b440bf6ab44be7 \
-                -e BRAINTREE_MERCHANT_ID=sdq9bn8825y4n32r \
-                -e BASE_URL=http://localhost:3000 \
-                dageshwar07/e-comm-back:v2
+          echo "🚀 Running Docker container..."
+          docker run -d --name e-comm-back -p ${PORT}:${PORT} \
+          -e NODE_ENV=${DEV_MODE} \
+          -e PORT=${PORT} \
+          -e JWT_SECRET='${JWT_SECRET}' \
+          -e MONGO_URL='${MONGO_URL}' \
+          -e BRAINTREE_PUBLIC_KEY='${BRAINTREE_PUBLIC_KEY}' \
+          -e BRAINTREE_PRIVATE_KEY='${BRAINTREE_PRIVATE_KEY}' \
+          -e BRAINTREE_MERCHANT_ID='${BRAINTREE_MERCHANT_ID}' \
+          -e BASE_URL='${BASE_URL}' \
+           dageshwar07/e-comm-back:v2
 
-              echo "✅ Deployment finished."
+           echo "✅ Deployment finished."
 
-            EOF
+           EOF
