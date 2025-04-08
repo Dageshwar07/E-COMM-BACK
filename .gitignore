@@ -12,6 +12,7 @@
 /build
 /env
 # misc
+/bkp.yml
 .DS_Store
 .env.local
 .env
