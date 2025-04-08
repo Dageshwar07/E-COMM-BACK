@@ -8,37 +8,58 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup SSH Access
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          - name: Setup SSH Access
 
-      - name: SSH & Deploy Docker Container
+      - name: Debug Secret Presence
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          echo "Checking secret lengths..."
+          echo "DEV_MODE: ${#DEV_MODE}"
+          echo "PORT: ${#PORT}"
+          echo "JWT_SECRET: ${#JWT_SECRET}"
+          echo "MONGO_URL: ${#MONGO_URL}"
+        env:
+          DEV_MODE: ${{ secrets.DEV_MODE }}
+          PORT: ${{ secrets.PORT }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          MONGO_URL: ${{ secrets.MONGO_URL }}
 
+      - name: SSH Deploy to EC2
+        run: |
+          echo "🚀 Starting SSH deployment..."
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+
+            set -e
+
+            echo "✅ Removing old container..."
             docker rm -f e-comm-back || true
 
+            echo "📦 Pulling latest Docker image..."
             docker pull dageshwar07/e-comm-back:v2
 
+            echo "🚀 Running Docker container..."
             docker run -d \
               --name e-comm-back \
-              -p 4000:4000 \
-              -e DEV_MODE="${{ secrets.DEV_MODE }}" \
-              -e PORT="${{ secrets.PORT }}" \
-              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-              -e MONGO_URL="${{ secrets.MONGO_URL }}" \
-              -e BRAINTREE_PUBLIC_KEY="${{ secrets.BRAINTREE_PUBLIC_KEY }}" \
-              -e BRAINTREE_PRIVATE_KEY="${{ secrets.BRAINTREE_PRIVATE_KEY }}" \
-              -e BRAINTREE_MERCHANT_ID="${{ secrets.BRAINTREE_MERCHANT_ID }}" \
-              -e BASE_URL="${{ secrets.BASE_URL }}" \
+              -p ${{ secrets.PORT }}:${{ secrets.PORT }} \
+              -e DEV_MODE=${{ secrets.DEV_MODE }} \
+              -e PORT=${{ secrets.PORT }} \
+              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              -e MONGO_URL=${{ secrets.MONGO_URL }} \
+              -e BRAINTREE_PUBLIC_KEY=${{ secrets.BRAINTREE_PUBLIC_KEY }} \
+              -e BRAINTREE_PRIVATE_KEY=${{ secrets.BRAINTREE_PRIVATE_KEY }} \
+              -e BRAINTREE_MERCHANT_ID=${{ secrets.BRAINTREE_MERCHANT_ID }} \
+              -e BASE_URL=${{ secrets.BASE_URL }} \
               dageshwar07/e-comm-back:v2
+
+            echo "✅ Deployment finished."
 
           EOF
