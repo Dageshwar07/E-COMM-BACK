@@ -8,7 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -19,32 +18,27 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          - name: Setup SSH Access
 
-      - name: SSH and Deploy Docker Container
+      - name: SSH & Deploy Docker Container
         run: |
-          echo "Starting SSH deployment..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} '
-            set -e
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
 
-            echo "✅ Removing old container if it exists..."
             docker rm -f e-comm-back || true
 
-            echo "📦 Pulling new Docker image..."
             docker pull dageshwar07/e-comm-back:latest
 
-            echo "🚀 Running container..."
             docker run -d \
               --name e-comm-back \
               -p 4000:4000 \
-              -e DEV_MODE=${{ secrets.DEV_MODE || 'production' }} \
-              -e PORT=${{ secrets.PORT }} \
-              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              -e MONGO_URL=${{ secrets.MONGO_URL }} \
-              -e BRAINTREE_PUBLIC_KEY=${{ secrets.BRAINTREE_PUBLIC_KEY }} \
-              -e BRAINTREE_PRIVATE_KEY=${{ secrets.BRAINTREE_PRIVATE_KEY }} \
-              -e BRAINTREE_MERCHANT_ID=${{ secrets.BRAINTREE_MERCHANT_ID }} \
-              -e BASE_URL=${{ secrets.BASE_URL }} \
+              -e DEV_MODE="${{ secrets.DEV_MODE }}" \
+              -e PORT="${{ secrets.PORT }}" \
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              -e MONGO_URL="${{ secrets.MONGO_URL }}" \
+              -e BRAINTREE_PUBLIC_KEY="${{ secrets.BRAINTREE_PUBLIC_KEY }}" \
+              -e BRAINTREE_PRIVATE_KEY="${{ secrets.BRAINTREE_PRIVATE_KEY }}" \
+              -e BRAINTREE_MERCHANT_ID="${{ secrets.BRAINTREE_MERCHANT_ID }}" \
+              -e BASE_URL="${{ secrets.BASE_URL }}" \
               dageshwar07/e-comm-back:latest
 
-            echo "✅ Deployment complete."
-          '
+          EOF
