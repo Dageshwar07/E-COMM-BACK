@@ -1,4 +1,4 @@
-name: Deploy e-comm-back to EC2
+name: Build and Deploy to EC2
 
 on:
   push:
@@ -6,27 +6,32 @@ on:
       - master
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      # Step 1: Checkout your code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      # Step 2: Log in to Docker Hub
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: SSH & Deploy Docker Container
+      # Step 3: Build Docker image and push to Docker Hub
+      - name: Build and push Docker image
         run: |
-          echo "🚀 Starting SSH deployment..."
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest
+
+      # Step 4: SSH into EC2 and redeploy the container
+      - name: SSH & Deploy to EC2
+        run: |
+          echo "🚀 Deploying to EC2..."
 
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash -s <<'ENDSSH'
             docker rm -f e-comm-back || true
-            docker pull dageshwar07/e-comm-back:v2
+            docker pull ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest
 
             docker run -d --name e-comm-back -p 4000:4000 \
               -e NODE_ENV=production \
@@ -37,9 +42,9 @@ jobs:
               -e BRAINTREE_PRIVATE_KEY="${BRAINTREE_PRIVATE_KEY}" \
               -e BRAINTREE_MERCHANT_ID="${BRAINTREE_MERCHANT_ID}" \
               -e BASE_URL="${BASE_URL}" \
-              dageshwar07/e-comm-back:v2
+              ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest
 
-            echo "✅ Deployment finished!"
+            echo "✅ EC2 Deployment complete."
           ENDSSH
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}

@@ -7,7 +7,7 @@
 
 # testing
 /coverage
-
+/cicd-backup.yml
 # production
 /build
 /env
