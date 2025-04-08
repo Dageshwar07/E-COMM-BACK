@@ -26,7 +26,7 @@ jobs:
 
             docker rm -f e-comm-back || true
 
-            docker pull dageshwar07/e-comm-back:latest
+            docker pull dageshwar07/e-comm-back:v2
 
             docker run -d \
               --name e-comm-back \
@@ -39,6 +39,6 @@ jobs:
               -e BRAINTREE_PRIVATE_KEY="${{ secrets.BRAINTREE_PRIVATE_KEY }}" \
               -e BRAINTREE_MERCHANT_ID="${{ secrets.BRAINTREE_MERCHANT_ID }}" \
               -e BASE_URL="${{ secrets.BASE_URL }}" \
-              dageshwar07/e-comm-back:latest
+              dageshwar07/e-comm-back:v2
 
           EOF
