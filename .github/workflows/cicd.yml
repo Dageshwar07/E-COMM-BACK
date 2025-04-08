@@ -36,7 +36,7 @@ jobs:
             docker run -d \
               --name e-comm-back \
               -p 4000:4000 \
-              -e NODE_ENV=${{ secrets.NODE_ENV }} \
+              -e DEV_MODE=${{ secrets.DEV_MODE }} \
               -e PORT=${{ secrets.PORT }} \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
               -e MONGO_URL=${{ secrets.MONGO_URL }} \
