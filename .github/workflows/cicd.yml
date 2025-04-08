@@ -28,6 +28,11 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || { echo "ssh-keyscan failed"; exit 1; }
 
+      - name: Debug SSH Connection
+        run: |
+          echo "Testing SSH connection to ${{ secrets.EC2_HOST }}"
+          ssh -vvv -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} exit
+
       - name: Deploy to EC2
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
