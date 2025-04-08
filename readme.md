@@ -1,0 +1,3 @@
+to run 
+
+docker run -d -p 4000:4000   -e NODE_ENV=production   -e PORT=4000   -e JWT_SECRET=dageshwardasmanikpuri9669712991   -e MONGO_URL="mongodb+srv://Dageshwar07:Dagesh0712@cluster1.o9ihroc.mongodb.net/ecommerce?retryWrites=true&w=majority"   -e BRAINTREE_PUBLIC_KEY=4y2kdfq2mdqn3f7v   -e BRAINTREE_PRIVATE_KEY=6d3e25dfcda2b75459b440bf6ab44be7   -e BRAINTREE_MERCHANT_ID=sdq9bn8825y4n32r   -e BASE_URL=http://localhost:3000   e-comm-back:v2
