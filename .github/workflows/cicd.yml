@@ -13,19 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup SSH directory
-        run: |
-          mkdir -p ~/.ssh
-
-      - name: Add EC2 host to known_hosts
-        run: |
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Add private key securely
-        run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
@@ -33,6 +20,16 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest
+
+      - name: Add EC2 host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Setup SSH Key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
       - name: Deploy to EC2
         env:
@@ -44,8 +41,7 @@ jobs:
           BASE_URL: ${{ secrets.BASE_URL }}
         run: |
           echo "🚀 Deploying to EC2..."
-
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} <<EOF
             docker rm -f e-comm-back || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest
 
@@ -61,4 +57,4 @@ jobs:
               ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest
 
             echo "✅ EC2 Deployment complete."
-          ENDSSH
+          EOF
