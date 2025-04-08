@@ -30,7 +30,7 @@ app.use("/api/v1/product", productRoutes);
 //rest api
 app.get("/test", (req, res) =>
   res.send(
-    `<h1>Site is Working. click <a href=${process.env.BASE_URL}>here</a> to visit frontend.</h1>`
+    `<h1>Site is Working on ubuntu. click <a href=${process.env.BASE_URL}>here</a> to visit frontend.</h1>`
   )
 );
 
