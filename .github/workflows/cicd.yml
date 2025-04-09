@@ -10,44 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
-
-      - name: Validate Secrets
-        run: |
-          if [ -z "${{ secrets.DOCKER_PASSWORD }}" ] || [ -z "${{ secrets.DOCKER_USERNAME }}" ]; then
-            echo "❌ Missing Docker credentials"; exit 1;
-          fi
-          if [ -z "${{ secrets.EC2_SSH_KEY }}" ] || [ -z "${{ secrets.EC2_HOST }}" ] || [ -z "${{ secrets.EC2_USER }}" ]; then
-            echo "❌ Missing EC2 SSH configuration"; exit 1;
-          fi
-          echo "✅ All required secrets are available."
 
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build and Push Docker Image
         run: |
-          IMAGE_TAG=${{ secrets.DOCKER_USERNAME }}/e-comm-back:${{ github.sha }}
-          echo "Building Docker image with tag: $IMAGE_TAG"
-          docker build -t $IMAGE_TAG .
-          docker push $IMAGE_TAG
-          echo "✅ Docker image pushed: $IMAGE_TAG"
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest
 
-      - name: Setup SSH Key
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          echo "Running ssh-keyscan for host: ${{ secrets.EC2_HOST }}"
-          ssh-keyscan -T 10 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || { echo "❌ ssh-keyscan failed for ${{ secrets.EC2_HOST }}"; exit 1; }
-          echo "✅ SSH key and known_hosts configured."
-
-      - name: Debug SSH Connection
-        run: |
-          echo "Testing SSH connection to ${{ secrets.EC2_HOST }}"
-          ssh -vvv -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} exit
-          echo "✅ SSH connection successful."
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to EC2
         env:
@@ -58,17 +37,12 @@ jobs:
           BRAINTREE_MERCHANT_ID: ${{ secrets.BRAINTREE_MERCHANT_ID }}
           BASE_URL: ${{ secrets.BASE_URL }}
         run: |
-          IMAGE_TAG=${{ secrets.DOCKER_USERNAME }}/e-comm-back:${{ github.sha }}
-          echo "Deploying Docker image: $IMAGE_TAG to EC2"
+          echo "🚀 Deploying to EC2..."
 
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} <<EOF
-            echo "Stopping and removing old container (if exists)..."
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} <<'ENDSSH'
             docker rm -f e-comm-back || true
+            docker pull ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest
 
-            echo "Pulling new Docker image..."
-            docker pull $IMAGE_TAG || { echo "❌ Docker pull failed"; exit 1; }
-
-            echo "Starting new container..."
             docker run -d --name e-comm-back -p 4000:4000 \
               -e NODE_ENV=production \
               -e PORT=4000 \
@@ -78,7 +52,7 @@ jobs:
               -e BRAINTREE_PRIVATE_KEY="${BRAINTREE_PRIVATE_KEY}" \
               -e BRAINTREE_MERCHANT_ID="${BRAINTREE_MERCHANT_ID}" \
               -e BASE_URL="${BASE_URL}" \
-              $IMAGE_TAG || { echo "❌ Docker run failed"; exit 1; }
+              ${{ secrets.DOCKER_USERNAME }}/e-comm-back:latest
 
             echo "✅ EC2 Deployment complete."
-          EOF
+          ENDSSH
